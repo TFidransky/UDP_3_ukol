@@ -12,7 +12,7 @@ def open_geojson():
         print("Jeden nebo oba vstupní soubory nebyly nalezeny.")
         return
     except json.JSONDecodeError:
-        print("Nevhodný formát vstupních souborů")
+        print("Nevhodný formát vstupních souborů.")
         return
 
     return adresy, kontejnery
@@ -28,7 +28,6 @@ def transform_to_SJTSK(adresy):
     adresa_sjtsk = transformer.transform(lat, lon)
     return adresa_sjtsk
 
-
 def calculate_distance(container, adresa_sjtsk):
     x1, y1 = adresa_sjtsk
     x2, y2 = container["geometry"]["coordinates"]
@@ -43,33 +42,25 @@ def nearest_container(adresy, kontejnery):
         if isinstance(adresa, dict):
             street = adresa["properties"]["addr:street"]
             housenumber = adresa["properties"]["addr:housenumber"]
-            nearest_container = None
             nearest_distance = None
             adresy_transformed = transform_to_SJTSK(adresa)
             for container in kontejnery:
-                name = container["properties"]["STATIONNAME"]
                 access = container["properties"]["PRISTUP"]
-                if access == "volně":
-                    distance = calculate_distance(container, adresy_transformed)
-                    if nearest_distance is None:
-                        nearest_container = container["properties"]
-                        nearest_distance = 0
-                    elif distance < nearest_distance:
-                        nearest_container = container["properties"]
-                        nearest_distance = distance
-
-
-            if nearest_distance is not None:
-                distances.append(nearest_distance)
-
-                if nearest_distance > max_distance:
-                    max_distance = nearest_distance
-                    farthest_address = (f"{street} {housenumber}")
-
-            if max_distance > 10000:
-                    print("Některá adresa je vzdálenější než 10 km.")
+                distance = calculate_distance(container, adresy_transformed)
+                if distance >= 10000:
+                    print("Některá adresa je od nejbližšího vhodného kontejneru vzdálenější 10 a více km.")
                     exit()
-
+                if distance > max_distance:
+                    max_distance = distance
+                    farthest_address = (f"{street} {housenumber}")
+                elif access == "volně":
+                    distances.append(distance)
+                    if (nearest_distance is None) or (distance < nearest_distance):
+                        nearest_distance = distance
+                elif access == "obyvatelům domu":
+                    distance = 0
+                    distances.append(distance)
+                    
 
     avg_distance = sum(distances) / len(distances)
     distances.sort()
@@ -77,10 +68,12 @@ def nearest_container(adresy, kontejnery):
         median_distance = (distances[len(distances) // 2] + distances[len(distances) // 2 - 1]) / 2
     else:
         median_distance = distances[len(distances) // 2]
+       
 
     print(f"Průměrná vzdálenost od adres k veřejným kontejnerům: {avg_distance:.2f} metrů")
     print(f"Mediánová vzdálenost od adres k veřejným kontejnerům: {median_distance:.2f} metrů")
-    print(f"Nejvzdálenější adresa od nejbližšího veřejného kontejneru je: {farthest_address}, vzdálenost je {max_distance:.2f} metrů")
+    print(f"Nejvzdálenější adresa od nejbližšího veřejného kontejneru: {farthest_address} ({max_distance:.2f} metrů)")
+
 
 
 adresy, kontejnery = open_geojson()

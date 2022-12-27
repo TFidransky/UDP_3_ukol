@@ -3,21 +3,31 @@ import pyproj
 import math
 
 def open_geojson():
-    with open('adresy.geojson', encoding = 'utf-8') as f:
-        adresy = json.load(f)
-    with open('kontejnery.geojson', encoding = 'utf-8') as f:
-        kontejnery = json.load(f)
+    try:
+        with open('adresy.geojson', encoding='utf-8') as f:
+            adresy = json.load(f)
+        with open('kontejnery.geojson', encoding='utf-8') as f:
+            kontejnery = json.load(f)
+    except FileNotFoundError:
+        print("Jeden nebo oba vstupní soubory nebyly nalezeny.")
+        return
+    except json.JSONDecodeError:
+        print("Nevhodný formát vstupních souborů")
+        return
+
     return adresy, kontejnery
 
-# potřeba převést adresy na S-JTSK z WGS-84
 
-def transform_to_SJTSK(adresa):
-    # převod souřadnic adresy na S-JTSK
+def transform_to_SJTSK(adresy):
+    if "geometry" not in adresy or "coordinates" not in adresy["geometry"]:
+        raise ValueError("Input data mají špatný formát")
+    lon, lat = adresy["geometry"]["coordinates"]
     wgs84 = pyproj.CRS("EPSG:4326")
     sjtsk = pyproj.CRS("EPSG:5514")
     transformer = pyproj.Transformer.from_crs(wgs84, sjtsk)
-    adresa_sjtsk = transformer.transform(adresa["geometry"]["coordinates"][0], adresa["geometry"]["coordinates"][1])
+    adresa_sjtsk = transformer.transform(lat, lon)
     return adresa_sjtsk
+
 
 def calculate_distance(container, adresa_sjtsk):
     x1, y1 = adresa_sjtsk
@@ -39,23 +49,27 @@ def nearest_container(adresy, kontejnery):
             for container in kontejnery:
                 name = container["properties"]["STATIONNAME"]
                 access = container["properties"]["PRISTUP"]
-                if access == "obyvatelům domu":
-                    nearest_distance = 0
-                elif access == "volně":
+                if access == "volně":
                     distance = calculate_distance(container, adresy_transformed)
-                    if nearest_distance is None or distance < nearest_distance:
+                    if nearest_distance is None:
+                        nearest_container = container["properties"]
+                        nearest_distance = 0
+                    elif distance < nearest_distance:
                         nearest_container = container["properties"]
                         nearest_distance = distance
+
 
             if nearest_distance is not None:
                 distances.append(nearest_distance)
 
                 if nearest_distance > max_distance:
                     max_distance = nearest_distance
-                    farthest_address = f"{street} {housenumber}"
+                    farthest_address = (f"{street} {housenumber}")
 
             if max_distance > 10000:
                     print("Některá adresa je vzdálenější než 10 km.")
+                    exit()
+
 
     avg_distance = sum(distances) / len(distances)
     distances.sort()
@@ -69,14 +83,11 @@ def nearest_container(adresy, kontejnery):
     print(f"Nejvzdálenější adresa od nejbližšího veřejného kontejneru je: {farthest_address}, vzdálenost je {max_distance:.2f} metrů")
 
 
-
-
-
 adresy, kontejnery = open_geojson()
 nearest_container(adresy["features"], kontejnery["features"])
 
 
-#Program by měl vypsat průměrnou vzdálenost k veřejnému kontejneru a ze které adresy je to k nejbližšímu kontejneru nejdále a jak to je daleko (v metrech, zaokrouhleno na celé metry).
-#Program by se měl umět vypořádat s nekorektním vstupem, jako je vadný nebo chybějící vstupní soubor. Dále by program měl skončit s chybou, pokud pro některou adresu je nejbližší kontejner dále než 10 kilometrů. 
+# Program by měl vypsat průměrnou vzdálenost k veřejnému kontejneru a ze které adresy je to k nejbližšímu kontejneru nejdále a jak to je daleko (v metrech, zaokrouhleno na celé metry).
+# Program by se měl umět vypořádat s nekorektním vstupem, jako je vadný nebo chybějící vstupní soubor. Dále by program měl skončit s chybou, pokud pro některou adresu je nejbližší kontejner dále než 10 kilometrů. 
 # Bonus1: kontejnery jen pro obyvatele domu = 0 vzdálenost pro daný dům
 # Bonus2: Medián

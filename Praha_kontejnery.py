@@ -11,18 +11,18 @@ def open_geojson():
 
 # potřeba převést adresy na S-JTSK z WGS-84
 
-def calculate_distance(adresa, container):
+def transform_to_SJTSK(adresa):
     # převod souřadnic adresy na S-JTSK
     wgs84 = pyproj.CRS("EPSG:4326")
     sjtsk = pyproj.CRS("EPSG:5514")
     transformer = pyproj.Transformer.from_crs(wgs84, sjtsk)
     adresa_sjtsk = transformer.transform(adresa["geometry"]["coordinates"][0], adresa["geometry"]["coordinates"][1])
+    return adresa_sjtsk
 
-    # výpočet vzdálenosti pomocí Pythagorovy věty
+def calculate_distance(container, adresa_sjtsk):
     x1, y1 = adresa_sjtsk
     x2, y2 = container["geometry"]["coordinates"]
     distance = math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
-
     return distance
 
 def nearest_container(adresy, kontejnery):
@@ -35,19 +35,19 @@ def nearest_container(adresy, kontejnery):
             housenumber = adresa["properties"]["addr:housenumber"]
             nearest_container = None
             nearest_distance = None
-
+            adresy_transformed = transform_to_SJTSK(adresa)
             for container in kontejnery:
                 name = container["properties"]["STATIONNAME"]
                 access = container["properties"]["PRISTUP"]
                 if access == "obyvatelům domu":
                     nearest_distance = 0
                 elif access == "volně":
-                    distance = calculate_distance(adresa, container)
+                    distance = calculate_distance(container, adresy_transformed)
                     if nearest_distance is None or distance < nearest_distance:
                         nearest_container = container["properties"]
                         nearest_distance = distance
 
-            if nearest_distance is not None and nearest_distance > 0:
+            if nearest_distance is not None:
                 distances.append(nearest_distance)
 
                 if nearest_distance > max_distance:
@@ -56,8 +56,6 @@ def nearest_container(adresy, kontejnery):
 
             if max_distance > 10000:
                     print("Některá adresa je vzdálenější než 10 km.")
-
-    print(len(distances))
 
     avg_distance = sum(distances) / len(distances)
     distances.sort()

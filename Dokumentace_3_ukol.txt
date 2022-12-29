@@ -1,0 +1,17 @@
+Program slouží k výpočtu vzdáleností adres k jejich nejbližšímu kontejneru. V případě, že se jedná o kontejner přístupný pouze obyvatelům domu, tak to adrese na stejném bodě dá vzdálenost 0.
+V případě, že je vzdálenost jedné adresy od nejbližšího kontejneru 10 km a více, tak se program ukončí s příslušnou hláškou
+Pro výpočet vzdálenosti se nejdříve provede transformace souřadnic z WGS84 (EPSG:4326) do S-JTSK (EPSG:5514) a následně využívá Pythagorovu větu k výpočtu vzdálenosti. 
+Program bere data z dvou vstupních souborů ve formátu GeoJSON s názvy "adresy.geojson" a "kontejnery.geojson".
+
+Funkce open_geojson() slouží k načtení vstupních souborů a v případě, že soubory nebyly nalezeny nebo nemají správný formát, vyhodí příslušnou chybovou hlášku. 
+
+Funkce transform_to_SJTSK() má jako parametr adresy (geoJSON soubor s adresama bydlišť) ve formátu GeoJSON a vrací její souřadnice po transformaci do S-JTSK (původně WGS-84, lze změnit po přiřazení správného EPSG:XXXX). 
+
+Funkce calculate_distance() využívá souřadnice transformované adresy a souřadnice kontejnerů k výpočtu vzdálenosti mezi nimi pomocí Pythagorovy věty (to umožňuje systém S-JTSK).
+
+Funkce nearest_container() prochází seznam adres a pro každou adresu vyhledává nejbližší kontejner. 
+Pokud je vzdálenost mezi adresou a kontejnerem větší než 10 km, program vyhodí chybovou hlášku a ukončí se. 
+Funkce také ukládá vzdálenosti mezi adresami a kontejnery do seznamu distances a ukládá nejvzdálenější adresu od kontejneru a její vzdálenost do proměnných farthest_address a max_distance.
+
+Poslední funkce results() vypočítá a vytiskne průměrnou a mediánovou vzdálenost mezi adresou a nejbližším kontejnerem a také nejvzdálenější vzdálenost od adresy k nejbližšímu kontejneru a její vzdálenost.
+Tyto výsledky následně vytiskne do konzole.

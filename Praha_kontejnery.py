@@ -43,7 +43,6 @@ def calculate_distance(container, adresa_sjtsk):
     # přístup obyvatelům domu
     # vždy to poté hodí vzdálenost od té adresy k nejbližšímu kontejneru do proměnné distances
     # vrací vzdálenosti, nejvzdálenější adresu a jaká byla tato vzdálenost
-# 
 def nearest_container(adresy, kontejnery):
     distances = []
     max_distance = 0

@@ -62,11 +62,12 @@ def nearest_container(adresy, kontejnery):
             for container in kontejnery:
                 access = container["properties"]["PRISTUP"]
                 distance = calculate_distance(container, adresy_transformed)
-                if distance >= 10000:
-                    print("Některá adresa je od nejbližšího vhodného kontejneru vzdálenější 10 a více km.")
-                    exit()
+                #if distance >= 10000:
+                 #   print("Některá adresa je od nejbližšího vhodného kontejneru vzdálenější 10 a více km.")
+                 #   exit()
                 if distance > max_distance:
                     max_distance = distance
+                    max_distance = round(max_distance)
                     distances.append(distance)
                     farthest_address = (f"{street} {housenumber}")  
                 elif access == "volně":
@@ -87,9 +88,9 @@ def results (distances, farthest_address, max_distance):
         else:
             median_distance = distances[len(distances) // 2]
        
-        print(f"Průměrná vzdálenost od adres k veřejným kontejnerům: {avg_distance:.2f} metrů")
-        print(f"Mediánová vzdálenost od adres k veřejným kontejnerům: {median_distance:.2f} metrů")
-        print(f"Nejvzdálenější adresa od nejbližšího veřejného kontejneru: {farthest_address} ({max_distance:.2f} metrů)")
+        print(f"Průměrná vzdálenost od adres k veřejným kontejnerům: {avg_distance:.0f} metrů")
+        print(f"Mediánová vzdálenost od adres k veřejným kontejnerům: {median_distance:.0f} metrů")
+        print(f"Nejvzdálenější adresa od nejbližšího veřejného kontejneru: {farthest_address} ({max_distance} metrů)")
 
 def main():
     adresy, kontejnery = open_geojson()

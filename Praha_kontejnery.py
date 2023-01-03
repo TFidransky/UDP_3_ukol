@@ -27,7 +27,7 @@ def open_geojson():
 # transformuje adresy z WGS-84 do S-JTSK (pro výpočet vzdáleností)
 def transform_to_SJTSK(adresy):
     if "geometry" not in adresy or "coordinates" not in adresy["geometry"]:
-        raise ValueError("Input data mají špatný formát")
+        raise ValueError("Vstupní data mají špatný formát")
     lon, lat = adresy["geometry"]["coordinates"]
     wgs84 = pyproj.CRS("EPSG:4326")
     sjtsk = pyproj.CRS("EPSG:5514")
@@ -57,6 +57,7 @@ def nearest_container(adresy, kontejnery):
     for adresa in adresy:
         if not isinstance(adresa, dict):
             print("Proměnná není datového typu \"slovník\"")
+            exit()
         else:
             street = adresa["properties"]["addr:street"]
             housenumber = adresa["properties"]["addr:housenumber"]

@@ -7,13 +7,20 @@ def open_geojson():
     try:
         with open('adresy.geojson', encoding='utf-8') as f:
             adresy = json.load(f)
+    except FileNotFoundError:
+        print("Vstupní soubor s adresami domů nebyl nalezen.")
+        return
+    except json.JSONDecodeError:
+        print("Nevhodný formát vstupního souboru s adresami domů.")
+        return
+    try:
         with open('kontejnery.geojson', encoding='utf-8') as f:
             kontejnery = json.load(f)
     except FileNotFoundError:
-        print("Jeden nebo oba vstupní soubory nebyly nalezeny.")
+        print("Vstupní soubor s adresami kontejnerů nebyl nalezen.")
         return
     except json.JSONDecodeError:
-        print("Nevhodný formát vstupních souborů.")
+        print("Nevhodný formát vstupního souboru s adresami kontejnerů.")
         return
     return adresy, kontejnery
 

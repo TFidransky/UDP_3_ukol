@@ -24,14 +24,19 @@ def open_geojson():
         return
     return adresy, kontejnery
 
-# transformuje adresy z WGS-84 do S-JTSK (pro výpočet vzdáleností)
-def transform_to_SJTSK(adresy):
-    if "geometry" not in adresy or "coordinates" not in adresy["geometry"]:
-        raise ValueError("Vstupní data mají špatný formát")
-    lon, lat = adresy["geometry"]["coordinates"]
+# vytvoří proměnnou transformer, aby se transformer nemusel vytvářet pro každou adresu, ten poté vrací pro další užití
+def get_transformer():
     wgs84 = pyproj.CRS("EPSG:4326")
     sjtsk = pyproj.CRS("EPSG:5514")
     transformer = pyproj.Transformer.from_crs(wgs84, sjtsk)
+    return transformer
+
+# pomocí transformeru (proměnná z funkce výše) transformuje adresy z WGS-84 do S-JTSK (aby bylo možné vypočítat vzdálenosti)
+def transform_to_SJTSK(adresy):
+    transformer = get_transformer()
+    if "geometry" not in adresy or "coordinates" not in adresy["geometry"]:
+        raise ValueError("Vstupní data mají špatný formát")
+    lon, lat = adresy["geometry"]["coordinates"]
     adresa_sjtsk = transformer.transform(lat, lon)
     return adresa_sjtsk
 

@@ -2,27 +2,47 @@ import json
 import pyproj
 import math
 
+# třída pro výjimku prázdného souboru. Chtěl jsem se vyhnout užití knihovny pandas, když není ve VS Code defaultně a musí se stáhnout
+class EmptyFileException(Exception):
+    def __init__(self, message):
+        self.message = message
+
 #otevře 2GeoJSONy, zkouší výjimky - 1) chybějící soubor a 2) nevhodný formát souboru, poté return dá aby se daly použít v dalších funkcích
-def open_geojson():
+def open_geojson(filename):
     try:
-        with open('adresy.geojson', encoding='utf-8') as f:
-            adresy = json.load(f)
+        with open(filename, encoding='utf-8') as f:
+            if f.tell() == f.seek(0, 2):
+                raise EmptyFileException(f"Vstupní soubor {filename} je prázdný.")
+            f.seek(0)
+            data = json.load(f)
     except FileNotFoundError:
-        print("Vstupní soubor s adresami domů nebyl nalezen.")
-        return
+        print(f"Vstupní soubor {filename} nebyl nalezen.")
+        exit(1)
+    except EmptyFileException:
+        print(f"Vstupní soubor {filename} byl prázdný")
+        exit(1)
     except json.JSONDecodeError:
-        print("Nevhodný formát vstupního souboru s adresami domů.")
-        return
-    try:
-        with open('kontejnery.geojson', encoding='utf-8') as f:
-            kontejnery = json.load(f)
-    except FileNotFoundError:
-        print("Vstupní soubor s adresami kontejnerů nebyl nalezen.")
-        return
-    except json.JSONDecodeError:
-        print("Nevhodný formát vstupního souboru s adresami kontejnerů.")
-        return
-    return adresy, kontejnery
+        print(f"Nevhodný formát vstupního souboru {filename}.")
+        exit(1)
+    return data
+
+# kontroluje, že jsou v souborech klíče na správných pozicích, pokud nejsou, tak vrátí False, pokud jsou, tak na konci vrátí True; v konzoli to vypíše příslušnou chybu
+# kontroluje pouze ty klíče, které jsou v obou souborech totožné, tedy ne ["PRISTUP"], který je pouze v kontejnery.geojson, nebo naopak ["addr:street"] nebo ["addr:housenumber"]v adresy.geojson
+def check_input_format(data):
+    for key in data:
+        if "features" not in data:
+            print(f"Klíč '{key}' nebyl nalezen ve vstupních souborech")
+            return False
+
+    for feature in data["features"]:
+        if "geometry" not in feature or "coordinates" not in feature["geometry"]:
+            print("Klíč 'geometry' nebo 'coordinates' nebyl nalezen.")
+            return False
+        if "properties" not in feature:
+            print("Klíč 'properties' nebyl nalezen")
+            return False
+
+    return True
 
 # vytvoří proměnnou transformer, aby se transformer nemusel vytvářet pro každou adresu, ten poté vrací pro další užití
 def get_transformer():
@@ -63,26 +83,25 @@ def nearest_container(adresy, kontejnery):
         if not isinstance(adresa, dict):
             print("Proměnná není datového typu \"slovník\"")
             exit()
-        else:
-            street = adresa["properties"]["addr:street"]
-            housenumber = adresa["properties"]["addr:housenumber"]
-            adresy_transformed = transform_to_SJTSK(adresa)
-            for container in kontejnery:
-                access = container["properties"]["PRISTUP"]
-                distance = calculate_distance(container, adresy_transformed)
-                if distance >= 10000:
-                    print("Některá adresa je od nejbližšího vhodného kontejneru vzdálenější 10 a více km.")
-                    exit()
-                if distance > max_distance:
-                    max_distance = distance
-                    max_distance = round(max_distance)
-                    distances.append(distance)
-                    farthest_address = (f"{street} {housenumber}")  
-                elif access == "volně":
-                    distances.append(distance)
-                elif access == "obyvatelům domu":
-                    distance = 0
-                    distances.append(distance)
+        street = adresa["properties"]["addr:street"]
+        housenumber = adresa["properties"]["addr:housenumber"]
+        adresy_transformed = transform_to_SJTSK(adresa)
+        for container in kontejnery:
+            access = container["properties"]["PRISTUP"]
+            distance = calculate_distance(container, adresy_transformed)
+            #if distance >= 10000:
+             #   print("Některá adresa je od nejbližšího vhodného kontejneru vzdálenější 10 a více km.")
+              #  exit()
+            if distance > max_distance:
+                max_distance = distance
+                max_distance = round(max_distance)
+                distances.append(distance)
+                farthest_address = (f"{street} {housenumber}")  
+            elif access == "volně":
+                distances.append(distance)
+            elif access == "obyvatelům domu":
+                distance = 0
+                distances.append(distance)
     return distances, farthest_address, max_distance
 
 # výpočet průměrné a mediánové vzdálenosti
@@ -101,7 +120,10 @@ def results (distances, farthest_address, max_distance):
         print(f"Nejvzdálenější adresa od nejbližšího veřejného kontejneru: {farthest_address} ({max_distance} metrů)")
 
 def main():
-    adresy, kontejnery = open_geojson()
+    adresy = open_geojson('adresy.geojson')
+    kontejnery = open_geojson('kontejnery.geojson')
+    if not check_input_format(adresy) or not check_input_format(kontejnery):
+        exit(1)
     distances, farthest_address, max_distance = nearest_container(adresy["features"], kontejnery["features"])
     results(distances, farthest_address, max_distance)
 

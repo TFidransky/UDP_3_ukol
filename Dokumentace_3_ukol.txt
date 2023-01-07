@@ -1,16 +1,23 @@
+Program bere data z dvou vstupních souborů ve formátu GeoJSON s názvy "adresy.geojson" a "kontejnery.geojson", tedy data ve formátu vektorových datových typů, které mají strukturu skládající se z klíčů a hodnot.
+Pro kontejnery.json potřebujeme primárně ["geometry"]["coordinates"] co obsahuje koordinační hodnoty v SJTSK a ["properties"]["PRISTUP"], co stanovuje přístup k danému kontejneru (volný vs pouze obyvatelům domu).
+Pro adresy.json bereme celý klíč ["features"], ve kterém jsou další dvě pro nás potřebné úrovně, ["properties"], co obsahuje potřebné údaje o adrese, názvu a podobných údajích, ["geometry"] obsahuje koordinační informace ve WGS-84.
+
+Pro výpočet vzdálenosti se nejdříve provede transformace souřadnic adres domů (adresy.geojson) z WGS84 (EPSG:4326) do S-JTSK (EPSG:5514) a následně využívá Pythagorovu větu k výpočtu vzdáleností. 
+
 Program slouží k výpočtu vzdáleností adres k jejich nejbližšímu kontejneru. V případě, že se jedná o kontejner přístupný pouze obyvatelům domu, tak to adrese na stejném bodě dá vzdálenost 0.
-V případě, že je vzdálenost jedné adresy od nejbližšího kontejneru 10 km a více, tak se program ukončí s příslušnou hláškou.
-Pro výpočet vzdálenosti se nejdříve provede transformace souřadnic z WGS84 (EPSG:4326) do S-JTSK (EPSG:5514) a následně využívá Pythagorovu větu k výpočtu vzdáleností. 
-Program bere data z dvou vstupních souborů ve formátu GeoJSON s názvy "adresy.geojson" a "kontejnery.geojson".
+V případě, že je vzdálenost alespoň jedné adresy od nejbližšího kontejneru 10 km a více, tak se program ukončí s příslušnou hláškou.
+V terminálu se zobrazí výsledky o průměrné vzdálenosti, mediánové vzdálenosti a největší vzdálenosti (společně s adresou, která byla nejdále od pro ni nejbližšího kontejneru).
 
 Funkce open_geojson() slouží k načtení vstupních souborů a v případě, že soubory nebyly nalezeny nebo nemají správný formát, vyhodí příslušnou chybovou hlášku. 
 
-Funkce transform_to_SJTSK() má jako parametr adresy (geoJSON soubor s adresami domů) ve formátu GeoJSON a vrací jejich souřadnice po transformaci do S-JTSK (původně WGS-84, lze změnit po přiřazení správného EPSG:XXXX). 
+Funkce get_transformer() a transform_to_SJTSK(adresy) zajišťují transformaci adres domů ze systému WGS-84 do S-JTSK (souřadnicový systém, vstupní i výstupní lze změnit po přiřazení správných EPSG:XXXX). 
+
+Funkce check_input_format(data) prohledává soubory a kontroluje, že jsou klíče na správných úrovních. Řeší pouze ty klíče, které jsou v obou souborech na stejných úrovních a mají stejná jména
 
 Funkce calculate_distance() využívá souřadnice transformovaných adres a souřadnice kontejnerů (nyní už obojí S-JTSK) k výpočtu vzdálenosti mezi nimi pomocí Pythagorovy věty (to umožňuje systém S-JTSK).
 
 Funkce nearest_container() prochází seznam adres a pro každou adresu vyhledává nejbližší kontejner. 
-Pokud je vzdálenost mezi adresou a kontejnerem 10 km a více, program vyhodí chybovou hlášku a ukončí se. 
+Pokud je vzdálenost mezi adresou a nejbližším kontejnerem 10 km a více, program vyhodí chybovou hlášku a ukončí se. 
 Funkce také ukládá vzdálenosti mezi adresami a kontejnery do seznamu distances a ukládá nejvzdálenější adresu od kontejneru a její vzdálenost do proměnných farthest_address a max_distance.
 
 Poslední funkce results() vypočítá průměrnou a mediánovou vzdálenost mezi adresou a nejbližším kontejnerem.

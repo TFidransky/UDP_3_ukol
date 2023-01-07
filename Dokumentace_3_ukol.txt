@@ -14,11 +14,12 @@ Funkce get_transformer() a transform_to_SJTSK(adresy) zajišťují transformaci 
 
 Funkce check_input_format(data) prohledává soubory a kontroluje, že jsou klíče na správných úrovních. Řeší pouze ty klíče, které jsou v obou souborech na stejných úrovních a mají stejná jména
 
+Funkce check_min_distance(adresy, kontejnery, transformer) hledá nejvzdálenější adresu domu od nejbližšího příslušného kontejneru; pokud je adresa 10 km a víc, tak se program ukončí
+
 Funkce calculate_distance() využívá souřadnice transformovaných adres a souřadnice kontejnerů (nyní už obojí S-JTSK) k výpočtu vzdálenosti mezi nimi pomocí Pythagorovy věty (to umožňuje systém S-JTSK).
 
-Funkce nearest_container() prochází seznam adres a pro každou adresu vyhledává nejbližší kontejner. 
-Pokud je vzdálenost mezi adresou a nejbližším kontejnerem 10 km a více, program vyhodí chybovou hlášku a ukončí se. 
-Funkce také ukládá vzdálenosti mezi adresami a kontejnery do seznamu distances a ukládá nejvzdálenější adresu od kontejneru a její vzdálenost do proměnných farthest_address a max_distance.
+Funkce container_distance() prochází seznam adres a pro každou adresu vyhledává nejbližší kontejner. 
+Ukládá vzdálenosti mezi adresami a kontejnery do seznamu distances.
 
 Poslední funkce results() vypočítá průměrnou a mediánovou vzdálenost mezi adresou a nejbližším kontejnerem.
 Výsledky o průměrné vzdálenosti, mediánové vzdálenosti a specifické vypsání adresy, která má nejbližší kontejner nejdále (vytiskne adresu i vzdálenost), vytiskne do konzole
